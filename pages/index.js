@@ -1,9 +1,56 @@
 import Head from "next/head";
 import { Inter } from "next/font/google";
+import { useEffect, useState } from "react";
+import { Configuration, OpenAIApi } from "openai";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  const [inputText, setInputText] = useState("");
+  const [conversations, setConversations] = useState([
+    { role: "assistant", message: "こんにちは。ご用件をお伝えください" },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const configuration = new Configuration({
+    apiKey: process.env.NEXT_PUBLIC_OPENAPI_KEY,
+  });
+
+  const openai = new OpenAIApi(configuration);
+
+  const handleInputChange = (event) => {
+    setInputText(event.target.value);
+  };
+
+  const handleSubmit = (event) => {
+    setIsLoading(true);
+    event.preventDefault();
+
+    if (inputText.trim().length === 0) {
+      alert("テキストを入力してください");
+      return;
+    }
+
+    const newConversation = [{ role: "user", message: inputText }];
+    setInputText("");
+
+    //TODO API実行＆結果セット
+    newConversation.push({
+      role: "assistant",
+      message: `${inputText}への、アシスタントの返信です`,
+    });
+
+    console.log(newConversation);
+
+    setConversations([...conversations, ...newConversation]);
+
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    console.log("useEffect!");
+  }, []);
+
   const sampleDialog = [
     { role: "user", message: "こんにちは" },
     { role: "assistant", message: "こんにちは。ご用件をお伝えください" },
@@ -17,6 +64,10 @@ export default function Home() {
         "GPTとは、「Generative Pre-trained Transformer」の略称で、OpenAIが開発した人工知能の一種です。",
     },
   ];
+
+  if (isLoading) {
+    return <div>送信中...</div>;
+  }
 
   return (
     <>
@@ -35,22 +86,36 @@ export default function Home() {
             <span className="text-center block font-medium border-b-2 border-indigo-400 pb-4 mb-4">
               ChatGPT-Clone
             </span>
-            {sampleDialog.map((dialog) =>
-              dialog.role == "user" ? (
-                <div className="flex justify-end mb-2">
+            {conversations.map((d, idx) =>
+              d.role == "user" ? (
+                <div key={idx} className="flex justify-end mb-2">
                   <div className="bg-indigo-400 text-white p-2 rounded-md">
-                    {dialog.message}
+                    {d.message}
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-start mb-2">
-                  <div className="bg-gray-200 p-2 rounded-md">
-                    {dialog.message}
-                  </div>
+                <div key={idx} className="flex justify-start mb-2">
+                  <div className="bg-gray-200 p-2 rounded-md">{d.message}</div>
                 </div>
               )
             )}
           </div>
+          <form className="w-full" onSubmit={(e) => handleSubmit(e)}>
+            <div className="flex items-center p-4 bg-gray-100 rounded-b-lg w-full">
+              <input
+                type="text"
+                className="flex-1 border-2 py-2 px-4 focus:outline-none rounded-lg focus:border-indigo-400"
+                value={inputText}
+                onChange={handleInputChange}
+              />
+              <button
+                type="submit"
+                className="p-2 bg-indigo-400 rounded-lg text-white hover:bg-indigo-800"
+              >
+                送信
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </>
